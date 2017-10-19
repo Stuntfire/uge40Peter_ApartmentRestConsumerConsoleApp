@@ -12,7 +12,31 @@ namespace uge40Peter_ApartmentRestConsumerConsoleApp
 {
     class Program
     {
-        private static string ApartmentServiceUri = "http://localhost:55216/ApartmentService.svc/apartment/";
+        private static string ApartmentServiceUri = "http://apartmentrestwcfservice.azurewebsites.net/ApartmentService.svc/apartment/";
+        //private static string ApartmentServiceUri = "http://localhost:55216/ApartmentService.svc/apartment/";
+
+        #region Opretter en ny Apartment.
+        private static async void PostApartment(Apartment apartment)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                string jsonApartment = JsonConvert.SerializeObject(apartment);
+
+                client.DefaultRequestHeaders.Clear();
+
+                var response = await client.PostAsync(ApartmentServiceUri + "post/", new StringContent(jsonApartment, Encoding.UTF8, "application/json"));
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Din nye lejlighed er oprette...");
+                }
+                else
+                {
+                    Console.WriteLine(response.StatusCode + "Fejl, en lejlighed med samme id findes allerede...");
+                }
+            }
+        }
+        #endregion
 
         #region Henter alle Apartments.
         private static async Task<IList<Apartment>> GetApertmentsAsync()
@@ -53,35 +77,12 @@ namespace uge40Peter_ApartmentRestConsumerConsoleApp
         }
         #endregion
 
-        #region Opretter en ny Apartment.
-        private static async void PostApartment(Apartment apartment)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                string jsonApartment = JsonConvert.SerializeObject(apartment);
-
-                client.DefaultRequestHeaders.Clear();
-
-                var response = await client.PostAsync(ApartmentServiceUri, new StringContent(jsonApartment, Encoding.UTF8, "application/json"));
-
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine("Din nye lejlighed er oprette...");
-                }
-                else
-                {
-                    Console.WriteLine(response.StatusCode + "Fejl, en lejlighed med samme id findes allerede...");
-                }
-            }
-        }
-        #endregion
-
         #region Opdatere en Apartment.
         private static async void PutApartment(Apartment apartment)
         {
             using (HttpClient client = new HttpClient())
             {
-                var response = await client.PutAsJsonAsync<Apartment>(ApartmentServiceUri, apartment);
+                var response = await client.PutAsJsonAsync<Apartment>(ApartmentServiceUri + "put/", apartment);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -100,7 +101,7 @@ namespace uge40Peter_ApartmentRestConsumerConsoleApp
         {
             using (HttpClient client = new HttpClient())
             {
-                var response = await client.DeleteAsync(ApartmentServiceUri + id);
+                var response = await client.DeleteAsync(ApartmentServiceUri + "delete/" + id);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -117,21 +118,34 @@ namespace uge40Peter_ApartmentRestConsumerConsoleApp
         static void Main(string[] args)
         {
             //her opretter vi en ny Apartment: (Price, Location, Postalcode, Size, NoRoom, WashingMachine, Dishwasher)
-            //Apartment newApartment = new Apartment() { Price = 10500, Location = "Paris", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
+            //Apartment newApartment = new Apartment() { Price = 10500, Location = "Post Town", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
 
             //Task.Run(() => PostApartment(newApartment));
 
             //her opdaterer vi en eksisterende Apartment: (Price, Location, Postalcode, Size, NoRoom, WashingMachine, Dishwasher)
-            //Apartment updateApartment = new Apartment() { Id = 13, Price = 10500, Location = "Hamburg", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
+            //Apartment updateApartment = new Apartment() { Id = 23, Price = 34, Location = "Tarm", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
 
             //Task.Run(() => PutApartment(updateApartment));
 
-            //Apartment deleteApartment = new Apartment() { Id = 13, Price = 10500, Location = "Hamburg", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
+            //Apartment deleteApartment = new Apartment() { Id = 23, Price = 34, Location = "Tarm", Postalcode = 4500, Size = 80, NoRoom = 3, WashingMachine = true, Dishwasher = true };
 
-            Task.Run(() => DeleteApartment(12));
+            var list1 = Task.Run(GetApertmentsAsync);
+
+            foreach (var apartment in list1.Result)
+            {
+                Console.WriteLine(apartment);
+            }
+
+            Console.WriteLine();
+
+            Task.Run(() => DeleteApartment(9));
+
+            //Console.ReadKey(); 
 
             //her henter vi alle Apartments på listen:
             var list = Task.Run(async () => await GetApertmentsAsync());
+
+            list.Wait(3000);
 
             foreach (var apartment in list.Result)
             {
@@ -139,20 +153,20 @@ namespace uge40Peter_ApartmentRestConsumerConsoleApp
             }
 
             //her henter vi Apartments ud fra Postnummer:
-            var taskPostal = Task.Run(async () => await GetApartmentByPostalcode(4200));
-            foreach (var postal in taskPostal.Result)
-            {
-                Console.WriteLine($"\nResultatet ud fra postnummer: \n\t{postal}");
-            }
+            //var taskPostal = Task.Run(async () => await GetApartmentByPostalcode(4200));
+            //foreach (var postal in taskPostal.Result)
+            //{
+            //    Console.WriteLine($"\nResultatet ud fra postnummer: \n\t{postal}");
+            //}
 
             //her henter vi Apartments ud fra By:
-            var taskLocation = Task.Run(async () => await GetApartmentByLocation("Aarhus"));
-            foreach (var location in taskLocation.Result)
-            {
-                Console.WriteLine($"\nResultatet ud fra by: \n\t{location}");
-            }
+            //var taskLocation = Task.Run(async () => await GetApartmentByLocation("Aarhus"));
+            //foreach (var location in taskLocation.Result)
+            //{
+            //    Console.WriteLine($"\nResultatet ud fra by: \n\t{location}");
+            //}
 
-
+            Console.ReadLine();
         }
     }
 }
